@@ -1,6 +1,8 @@
 ﻿param (
     [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, HelpMessage="Please provide the domain for the SSL Cert")] 
-    [string]$certdomain = "mydomain.pch.com"
+    [string]$certdomain = "mydomain.pch.com",
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, HelpMessage="Is it a wildcard Cert?")] 
+    [int]$starcert = 0
 )
 
 $dir = Get-Location
@@ -10,8 +12,13 @@ $certnamePfx = "$certdomain$pfxExt"
 $certnameCrt = "$certdomain$crtExt"
 $certPath =  "$dir\$certnamePfx"
 $certPass = "password"  
+$starcertprefix = "" 
+if ($starcert -eq 1)
+{
+    $starcertprefix  = "*."
+}
 
-$rootCert = New-SelfSignedCertificate -CertStoreLocation Cert:\CurrentUser\My -DnsName $certdomain -TextExtension @("2.5.29.19={text}CA=true") -KeyUsage CertSign,CrlSign,DigitalSignature
+$rootCert = New-SelfSignedCertificate -CertStoreLocation Cert:\CurrentUser\My -DnsName $starcertprefix$certdomain -TextExtension @("2.5.29.19={text}CA=true") -KeyUsage CertSign,CrlSign,DigitalSignature
 [System.Security.SecureString]$rootCertPassword = ConvertTo-SecureString -String $certPass -Force -AsPlainText
 [String]$rootCertPath = Join-Path -Path 'cert:\CurrentUser\My\' -ChildPath "$($rootCert.Thumbprint)"
 Export-PfxCertificate -Cert $rootCertPath -FilePath $certnamePfx -Password $rootCertPassword
